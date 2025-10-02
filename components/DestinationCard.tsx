@@ -1,66 +1,63 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-export default function DestinationCard({ title, price, image, description, vertical }: any) {
+type Props = {
+  title: string;
+  location?: string;
+  price?: number;
+  image?: string;
+  onPress?: () => void;
+};
+
+export default function DestinationCard({ title, location, price, image, onPress }: Props) {
   return (
-    <View style={[styles.card, vertical && styles.vertical]}>
-      {image ? (
-        <Image source={{ uri: image }} style={styles.image} />
-      ) : (
-        <View style={styles.placeholder} />
-      )}
-      <View style={styles.textContainer}>
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+      {image && <Image source={{ uri: image }} style={styles.image} />}
+      <View style={styles.content}>
         <Text style={styles.title}>{title}</Text>
-        {price && <Text style={styles.price}>₱{price}</Text>}
-        {description && <Text style={styles.description}>{description}</Text>}
+        {location && <Text style={styles.location}>{location}</Text>}
+        {price !== undefined && (
+          <Text style={styles.price}>₱{price.toLocaleString()} / person</Text>
+        )}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: 160,
-    marginHorizontal: 8,
-    borderRadius: 12,
+    width: 180,
+    marginRight: 16,
     backgroundColor: "#fff",
-    overflow: "hidden",
+    borderRadius: 12,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
     elevation: 3,
-  },
-  vertical: {
-    width: "90%",
-    alignSelf: "center",
-    marginVertical: 10,
+    overflow: "hidden",
   },
   image: {
     width: "100%",
-    height: 100,
+    height: 120,
   },
-  placeholder: {
-    width: "100%",
-    height: 100,
-    backgroundColor: "#E5E7EB",
-  },
-  textContainer: {
-    padding: 10,
+  content: {
+    padding: 12,
   },
   title: {
     fontSize: 16,
     fontWeight: "600",
     color: "#111827",
   },
+  location: {
+    fontSize: 14,
+    color: "#6B7280",
+    marginTop: 2,
+  },
   price: {
     fontSize: 14,
     fontWeight: "500",
     color: "#2563EB",
-    marginTop: 4,
-  },
-  description: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 2,
+    marginTop: 6,
   },
 });

@@ -72,7 +72,7 @@ export default function Register() {
           },
           { merge: true }
         );
-        router.replace("/(tabs)/home");
+        router.replace("/homesection");
       } catch (err: any) {
         Alert.alert("Social Login Failed", err.message);
       } finally {
@@ -121,7 +121,8 @@ export default function Register() {
         createdAt: serverTimestamp(),
       });
       Alert.alert("Success", "Account created successfully!");
-      router.replace("/(tabs)/home");
+      router.replace("/homesection");
+
     } catch (err: any) {
       Alert.alert("Registration Failed", err.message);
     } finally {

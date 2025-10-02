@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-  SafeAreaView,
+  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,36 +9,54 @@ import {
   View,
 } from "react-native";
 
-// ✅ relative imports
+// hooks
 import { useDestinations } from "../../hooks/useDestinations";
 import { useItineraries } from "../../hooks/useItineraries";
 import { usePromos } from "../../hooks/usePromos";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
+// components
 import DestinationCard from "../../components/DestinationCard";
-import ItineraryCard from "../../components/ItineraryCard"; // ✅ NEW
+import ItineraryCard from "../../components/ItineraryCard";
 import PromoBanner from "../../components/PromoBanner";
 
 export default function HomeScreen() {
   const router = useRouter();
-
   const { name } = useUserProfile();
   const { destinations = [] } = useDestinations(3);
-  const { promos = [] } = usePromos(1);
-  const { itineraries = [] } = useItineraries(2);
+  const { promos = [] } = usePromos(2);
+  const { itineraries = [] } = useItineraries(3);
+
+  const displayName =
+    name && name !== "Unnamed" && name.trim() !== "" ? name : "Traveler";
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.welcome}>Welcome, {name || "Traveler"}</Text>
-          <Text style={styles.subtext}>Where’s your next adventure?</Text>
-        </View>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      {/* 🔹 Hero Section */}
+      <View style={styles.heroWrapper}>
+        <ImageBackground
+          source={require("../../assets/images/hometop.jpg")}
+          style={styles.hero}
+          resizeMode="cover"
+        >
+          <View style={styles.overlay} />
+          <View style={styles.heroContent}>
+            <Text style={styles.heroTitle}>Welcome, {displayName}</Text>
+            <Text style={styles.heroSubtitle}>
+              Plan your next adventure today
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/destination")}
+              style={styles.heroButton}
+            >
+              <Text style={styles.heroButtonText}>Explore Now</Text>
+            </TouchableOpacity>
+          </View>
+        </ImageBackground>
+      </View>
 
+      {/* 🔹 Sections Below */}
+      <View style={styles.sectionContainer}>
         {/* Popular Destinations */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -52,8 +70,10 @@ export default function HomeScreen() {
               <DestinationCard
                 key={dest.id}
                 title={dest.title}
+                location={dest.location}
                 price={dest.price}
                 image={dest.imageUrl}
+                onPress={() => router.push(`/(tabs)/destination?id=${dest.id}`)}
               />
             ))}
           </ScrollView>
@@ -63,12 +83,14 @@ export default function HomeScreen() {
         {promos.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Promotions</Text>
+              <Text style={styles.sectionTitle}>Exclusive Promotions</Text>
               <TouchableOpacity onPress={() => router.push("/(tabs)/promos")}>
                 <Text style={styles.link}>See All</Text>
               </TouchableOpacity>
             </View>
-            <PromoBanner promo={promos[0]} />
+            {promos.map((promo) => (
+              <PromoBanner key={promo.id} promo={promo} />
+            ))}
           </View>
         )}
 
@@ -76,9 +98,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recommended for You</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/(tabs)/itineraries")}
-            >
+            <TouchableOpacity onPress={() => router.push("/(tabs)/itineraries")}>
               <Text style={styles.link}>See All</Text>
             </TouchableOpacity>
           </View>
@@ -88,36 +108,71 @@ export default function HomeScreen() {
               id={item.id}
               title={item.title}
               description={item.description}
-              image={item.imageUrl} // ✅ now supports itinerary images
+              image={item.imageUrl}
+              duration={item.duration}
+              onPress={() => router.push(`/(tabs)/itineraries?id=${item.id}`)}
             />
           ))}
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
+  heroWrapper: {
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 8,
+    elevation: 6, // ✅ Android shadow
+    marginBottom: 16,
   },
-  scrollContainer: {
-    paddingBottom: 20,
+  hero: {
+    height: 280,
+    justifyContent: "flex-end",
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
-  welcome: {
-    fontSize: 24,
+  heroContent: {
+    padding: 24,
+  },
+  heroTitle: {
+    fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: "#fff",
   },
-  subtext: {
+  heroSubtitle: {
     fontSize: 16,
-    color: "#6B7280",
-    marginTop: 4,
+    color: "rgba(255,255,255,0.9)",
+    marginVertical: 6,
+  },
+  heroButton: {
+    backgroundColor: "#2563EB",
+    paddingVertical: 12,
+    paddingHorizontal: 26,
+    borderRadius: 30,
+    marginTop: 12,
+    alignSelf: "flex-start",
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  heroButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  sectionContainer: {
+    backgroundColor: "#F9FAFB",
+    paddingBottom: 20,
   },
   section: {
     marginTop: 20,

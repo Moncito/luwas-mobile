@@ -68,7 +68,7 @@ export default function Login() {
           return;
         }
 
-        router.replace("/(tabs)/home");
+        router.replace("/homesection");
       } catch (err: any) {
         Alert.alert("Social Login Failed", err.message);
       } finally {
@@ -108,7 +108,8 @@ export default function Login() {
         return;
       }
 
-      router.replace("/(tabs)/home");
+      router.replace("/homesection");
+
     } catch (err: any) {
       Alert.alert("Login Failed", err.message);
     } finally {
