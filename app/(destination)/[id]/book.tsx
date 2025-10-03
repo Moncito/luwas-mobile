@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getAuth } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -45,9 +45,9 @@ export default function BookingForm() {
     specialRequests: "",
   });
 
-  const [showDatePicker, setShowDatePicker] = useState<{
-    type: "departure" | "return" | null;
-  }>({ type: null });
+  const [showDatePicker, setShowDatePicker] = useState<{ type: "departure" | "return" | null }>({
+    type: null,
+  });
 
   const [showSpecialRequests, setShowSpecialRequests] = useState(false);
 
@@ -106,31 +106,21 @@ export default function BookingForm() {
     try {
       const totalPrice = formData.travelers * (destination.price || 0);
 
-      const res = await fetch(
-        "https://luwas-travel-app.vercel.app/api/bookings",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...formData,
-            userId: user?.uid,
-            destinationId: id,
-            totalPrice,
-            status: "pending_payment",
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Failed to create booking");
-
-      const booking = await res.json();
+      // ✅ Direct Firestore write
+      const docRef = await addDoc(collection(db, "bookings"), {
+        ...formData,
+        userId: user?.uid,
+        destinationId: id,
+        destination: destination.name,
+        totalPrice,
+        status: "pending_payment",
+        createdAt: serverTimestamp(),
+      });
 
       Alert.alert("Success", "Booking created! Redirecting to payment...");
-      router.push(
-        `/destination/${id}/pay?bookingId=${booking.id}&title=${encodeURIComponent(
-          destination.name
-        )}&type=destination`
-      );
+      router.push(`/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
+  destination.name
+)}&type=destination`);
     } catch (err) {
       console.error("Booking error:", err);
       Alert.alert("Error", "Something went wrong while booking.");
@@ -154,33 +144,28 @@ export default function BookingForm() {
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }} // spacing for sticky button
+        contentContainerStyle={{ paddingBottom: 120 }}
       >
         {/* Hero Image */}
         <ImageBackground
-        source={{ uri: destination.imageUrl }}
-        style={styles.heroImage}
-        imageStyle={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
+          source={{ uri: destination.imageUrl }}
+          style={styles.heroImage}
+          imageStyle={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
         >
-        {/* Dark overlay */}
-        <View style={styles.heroOverlay} />
+          {/* Dark overlay */}
+          <View style={styles.heroOverlay} />
 
-        {/* Back button */}
-        <TouchableOpacity
-            style={styles.backBtn}
-            onPress={() => router.back()} // goes back to previous screen
-        >
+          {/* Back button */}
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        {/* Text */}
-        <View style={styles.heroTextBox}>
+          {/* Title + Price */}
+          <View style={styles.heroTextBox}>
             <Text style={styles.heroTitle}>{destination.name}</Text>
             <Text style={styles.heroPrice}>₱{destination.price.toLocaleString()}</Text>
-        </View>
+          </View>
         </ImageBackground>
-
-
 
         {/* Step Indicator */}
         <Text style={styles.stepIndicator}>Step 1 of 2: Traveler Information</Text>
@@ -269,17 +254,11 @@ export default function BookingForm() {
           {/* Travelers Stepper */}
           <Text style={styles.label}>Travelers</Text>
           <View style={styles.stepper}>
-            <TouchableOpacity
-              style={styles.stepBtn}
-              onPress={() => handleTravelerChange(-1)}
-            >
+            <TouchableOpacity style={styles.stepBtn} onPress={() => handleTravelerChange(-1)}>
               <Text style={styles.stepText}>-</Text>
             </TouchableOpacity>
             <Text style={styles.travelerCount}>{formData.travelers}</Text>
-            <TouchableOpacity
-              style={styles.stepBtn}
-              onPress={() => handleTravelerChange(1)}
-            >
+            <TouchableOpacity style={styles.stepBtn} onPress={() => handleTravelerChange(1)}>
               <Text style={styles.stepText}>+</Text>
             </TouchableOpacity>
           </View>
@@ -291,13 +270,11 @@ export default function BookingForm() {
               <Text style={styles.priceText}>
                 Price per traveler: ₱{destination.price.toLocaleString()}
               </Text>
-              <Text style={styles.totalPrice}>
-                Total: ₱{totalPrice.toLocaleString()}
-              </Text>
+              <Text style={styles.totalPrice}>Total: ₱{totalPrice.toLocaleString()}</Text>
             </View>
           </View>
 
-          {/* Special Requests Collapsible */}
+          {/* Special Requests */}
           <TouchableOpacity onPress={() => setShowSpecialRequests(!showSpecialRequests)}>
             <Text style={styles.toggleSpecial}>
               {showSpecialRequests ? "Hide Special Requests" : "+ Add Special Requests"}
@@ -310,9 +287,7 @@ export default function BookingForm() {
               placeholder="Special Requests (optional)"
               multiline
               value={formData.specialRequests}
-              onChangeText={(v) =>
-                setFormData({ ...formData, specialRequests: v })
-              }
+              onChangeText={(v) => setFormData({ ...formData, specialRequests: v })}
             />
           )}
         </View>
@@ -320,11 +295,7 @@ export default function BookingForm() {
 
       {/* Sticky Confirm Button */}
       <View style={styles.stickyButtonWrapper}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
           <Text style={styles.buttonText}>
             {loading ? "Processing..." : "Confirm Booking"}
           </Text>
@@ -338,24 +309,11 @@ export default function BookingForm() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  heroImage: {
-  width: "100%",
-  height: 240,
-  justifyContent: "flex-end",
-    },
-heroTextBox: {
-  paddingHorizontal: 20,   // left + right space
-  paddingBottom: 24,       // push text up from bottom
-},
-heroTitle: { fontSize: 22, fontWeight: "700", color: "#fff" },
-heroPrice: { fontSize: 16, color: "#fcd34d", marginTop: 2 },
-  stepIndicator: {
-    marginTop: 16,
-    textAlign: "center",
-    color: "#666",
-    fontSize: 13,
-    marginBottom: 4,
-  },
+  heroImage: { width: "100%", height: 240, justifyContent: "flex-end" },
+  heroTextBox: { paddingHorizontal: 20, paddingBottom: 24 },
+  heroTitle: { fontSize: 22, fontWeight: "700", color: "#fff" },
+  heroPrice: { fontSize: 16, color: "#fcd34d", marginTop: 2 },
+  stepIndicator: { marginTop: 16, textAlign: "center", color: "#666", fontSize: 13, marginBottom: 4 },
   form: { padding: 16 },
   sectionTitle: { fontSize: 18, fontWeight: "700", color: "#111", marginBottom: 4 },
   sectionSubtitle: { fontSize: 13, color: "#666", marginBottom: 16 },
@@ -371,21 +329,8 @@ heroPrice: { fontSize: 16, color: "#fcd34d", marginTop: 2 },
   },
   input: { flex: 1, padding: 10, fontSize: 14, color: "#111" },
   label: { fontSize: 14, fontWeight: "600", marginTop: 8, marginBottom: 6 },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-    marginTop: 4,
-  },
-  stepBtn: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#EFF6FF",
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  stepper: { flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 12, marginTop: 4 },
+  stepBtn: { width: 40, height: 40, backgroundColor: "#EFF6FF", borderRadius: 12, alignItems: "center", justifyContent: "center" },
   stepText: { fontSize: 20, fontWeight: "700", color: "#2563EB" },
   travelerCount: { marginHorizontal: 16, fontSize: 16, fontWeight: "700" },
   priceBox: {
@@ -399,44 +344,11 @@ heroPrice: { fontSize: 16, color: "#fcd34d", marginTop: 2 },
   },
   priceText: { fontSize: 14, color: "#2563EB" },
   totalPrice: { fontSize: 16, fontWeight: "700", color: "#1E40AF" },
-  toggleSpecial: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#2563EB",
-    marginTop: 8,
-  },
-  stickyButtonWrapper: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
-    padding: 16,
-    borderTopWidth: 1,
-    borderColor: "#eee",
-  },
-  button: {
-    backgroundColor: "#2563EB",
-    borderRadius: 999,
-    alignItems: "center",
-    paddingVertical: 16,
-    marginBottom: 4,
-  },
+  toggleSpecial: { fontSize: 14, fontWeight: "600", color: "#2563EB", marginTop: 8 },
+  stickyButtonWrapper: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#fff", padding: 16, borderTopWidth: 1, borderColor: "#eee" },
+  button: { backgroundColor: "#2563EB", borderRadius: 999, alignItems: "center", paddingVertical: 16, marginBottom: 4 },
   buttonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   note: { fontSize: 12, color: "#888", textAlign: "center" },
-  heroOverlay: {
-  ...StyleSheet.absoluteFillObject,
-  backgroundColor: "rgba(0,0,0,0.35)", // darken the whole image
-  borderBottomLeftRadius: 24,
-  borderBottomRightRadius: 24,
-},
-backBtn: {
-  position: "absolute",
-  top: 50,       // adjust depending on notch/safe area
-  left: 20,
-  backgroundColor: "rgba(0,0,0,0.4)", 
-  padding: 8,
-  borderRadius: 20,
-},
-
+  heroOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)", borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+  backBtn: { position: "absolute", top: 50, left: 20, backgroundColor: "rgba(0,0,0,0.4)", padding: 8, borderRadius: 20 },
 });
