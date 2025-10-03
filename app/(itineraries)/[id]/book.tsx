@@ -3,23 +3,23 @@ import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getAuth } from "firebase/auth";
 import {
-    addDoc,
-    collection,
-    doc,
-    getDoc,
-    serverTimestamp,
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ImageBackground,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { db } from "../../../src/lib/firebase";
@@ -41,7 +41,7 @@ export default function ItineraryBookingForm() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     phone: "",
     localAddress: "",
@@ -58,7 +58,7 @@ export default function ItineraryBookingForm() {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        fullName: user.displayName || "",
+        name: user.displayName || "",
         email: user.email || "",
       }));
     }
@@ -188,8 +188,8 @@ export default function ItineraryBookingForm() {
             <TextInput
               style={styles.input}
               placeholder="Full Name"
-              value={formData.fullName}
-              onChangeText={(v) => setFormData({ ...formData, fullName: v })}
+              value={formData.name}
+              onChangeText={(v) => setFormData({ ...formData, name: v })}
             />
           </View>
 

@@ -8,7 +8,7 @@ export default {
     orientation: "portrait",
     platforms: ["ios", "android", "web"],
     sdkVersion: "54.0.0",
-    scheme: "luwasmobile", // deep link scheme
+    scheme: "luwasmobile",
     android: {
       package: "com.luwas.travelapp",
     },
@@ -26,18 +26,23 @@ export default {
       // ✅ Facebook OAuth
       FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
 
-      // ✅ Expo EAS project link (keep for later if you go paid dev account)
+      // ✅ OpenWeather
+      OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY,
+
+      // ✅ Expo EAS project link
       eas: {
         projectId: "56d069e9-1296-4aee-8a0f-cb743549a0dd",
       },
     },
-    "plugins":[
+
+    plugins: [
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.1030258873457-h44abd9qhpkt229gqkqkmd0t65soq707"
-        }
-      ]
-    ]
+          iosUrlScheme:
+            "com.googleusercontent.apps.1030258873457-h44abd9qhpkt229gqkqkmd0t65soq707",
+        },
+      ],
+    ],
   },
 };

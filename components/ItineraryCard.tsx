@@ -1,52 +1,56 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-type Props = {
+interface ItineraryCardProps {
+  id: string;
   title: string;
-  description: string;
+  duration: string;
   image: string;
-};
+  onPress?: () => void;
+}
 
-export default function ItineraryCard({ title, description, image }: Props) {
+export default function ItineraryCard({ title, duration, image, onPress }: ItineraryCardProps) {
   return (
-    <View style={styles.card}>
-      <Image source={{ uri: image }} style={styles.image} />
-      <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-      </View>
-    </View>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.card}>
+      <ImageBackground
+        source={{ uri: image }}
+        style={styles.image}
+        imageStyle={{ borderRadius: 18 }}
+      >
+        <View style={styles.overlay} />
+        <View style={styles.textBox}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.duration}>{duration}</Text>
+        </View>
+      </ImageBackground>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 3,
+    width: 240, // ✅ wide enough for swipe
+    height: 160,
+    marginRight: 16,
+    borderRadius: 18,
     overflow: "hidden",
+    backgroundColor: "#eee",
   },
   image: {
-    width: "100%",
-    height: 180,
+    flex: 1,
+    justifyContent: "flex-end",
+    padding: 14,
   },
-  content: {
-    padding: 12,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
+  textBox: {
+    position: "absolute",
+    bottom: 14,
+    left: 14,
+    right: 14,
   },
-  description: {
-    fontSize: 14,
-    color: "#6B7280",
-    marginTop: 4,
-  },
+  title: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  duration: { fontSize: 13, color: "#fcd34d", marginTop: 2 },
 });

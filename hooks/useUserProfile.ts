@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { auth, db } from "../src/lib/firebase";
 
 export function useUserProfile() {
-  const [name, setName] = useState<string | null>(null);
+  const [fullName, setName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export function useUserProfile() {
 
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setName(userDoc.data().name || "Traveler");
+          setName(userDoc.data().fullName || "Traveler");
         } else {
           setName("Traveler");
         }
@@ -33,5 +33,5 @@ export function useUserProfile() {
     fetchUser();
   }, []);
 
-  return { name, loading };
+  return { fullName, loading };
 }
