@@ -184,7 +184,7 @@ export default function DestinationDetails() {
       {/* Sticky Book Now */}
       <View style={styles.stickyBtnWrapper}>
         <Pressable
-          onPress={() => router.push(`/destination/${id}/book`)}
+          onPress={() => router.push(`/${id}/book`)}
           style={({ pressed }) => [
             styles.bookBtn,
             { transform: [{ scale: pressed ? 0.96 : 1 }] },
@@ -270,4 +270,5 @@ const styles = StyleSheet.create({
   bookText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   error: { fontSize: 16, color: "red" },
+  
 });
