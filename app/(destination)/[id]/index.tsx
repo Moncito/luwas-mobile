@@ -1,17 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
-  ScrollView,
+  Animated,
+  Dimensions,
+  ImageBackground,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import MapView, { Marker } from "react-native-maps";
 import { db } from "../../../src/lib/firebase";
+
+// 🔹 Import modular components
+import NearbySpots from "../../../components/(destination-calls)/NearbySpots";
+import TravelerReviews from "../../../components/(destination-calls)/TravelerReviews";
+import WeatherInsights from "../../../components/(destination-calls)/WeatherInsights";
+
+const { height } = Dimensions.get("window");
 
 interface Destination {
   id: string;
@@ -20,34 +32,9 @@ interface Destination {
   imageUrl: string;
   price: number;
   location: string;
-  tags: string[];
   latitude: number;
   longitude: number;
 }
-
-// Yelp
-interface YelpData {
-  summary: string;
-  rating: number;
-  url: string;
-  image: string;
-}
-
-// Recommended Places
-interface Place {
-  title: string;
-  description: string;
-  image: string;
-  link: string;
-}
-
-// Weather
-interface WeatherData {
-  bestTime: { label: string; reason: string; emoji: string }[];
-  weatherInfo: { label: string; months: string; temperature: string }[];
-}
-
-const API_BASE = "https://luwas-travel.vercel.app"; // 🔹 Change if your domain differs
 
 export default function DestinationDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -56,11 +43,8 @@ export default function DestinationDetails() {
   const [destination, setDestination] = useState<Destination | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [yelp, setYelp] = useState<YelpData | null>(null);
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const scrollY = new Animated.Value(0);
 
-  // --- Firestore fetch ---
   useEffect(() => {
     const fetchDestination = async () => {
       try {
@@ -77,42 +61,6 @@ export default function DestinationDetails() {
     };
     fetchDestination();
   }, [id]);
-
-  // --- API fetches ---
-  useEffect(() => {
-    if (!destination) return;
-
-    // Yelp
-    fetch(
-      `${API_BASE}/api/yelp/summary?name=${encodeURIComponent(
-        destination.name
-      )}&location=${encodeURIComponent(destination.location)}`
-    )
-      .then((res) => res.json())
-      .then((data) => setYelp(data))
-      .catch((err) => console.error("❌ Yelp API:", err));
-
-    // Recommended Places
-    fetch(
-      `${API_BASE}/api/recommendations?lat=${destination.latitude}&lon=${destination.longitude}`
-    )
-      .then((res) => res.json())
-      .then((data) => setPlaces(data.places || []))
-      .catch((err) => console.error("❌ Places API:", err));
-
-    // Weather Insights
-    fetch(`${API_BASE}/api/ai/weather`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: destination.name,
-        location: destination.location,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => setWeather(data))
-      .catch((err) => console.error("❌ Weather API:", err));
-  }, [destination]);
 
   if (loading) {
     return (
@@ -131,135 +79,195 @@ export default function DestinationDetails() {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Hero Image */}
-      <Image source={{ uri: destination.imageUrl }} style={styles.heroImage} />
+    <View style={styles.container}>
+      <Animated.ScrollView
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+      >
+        {/* Hero */}
+        <View>
+          <ImageBackground
+            source={{ uri: destination.imageUrl }}
+            style={styles.heroImage}
+          >
+            <Animated.View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  opacity: scrollY.interpolate({
+                    inputRange: [0, 200],
+                    outputRange: [0, 1],
+                    extrapolate: "clamp",
+                  }),
+                },
+              ]}
+            >
+              <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+            </Animated.View>
 
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={22} color="#fff" />
-      </TouchableOpacity>
-
-      {/* Destination Info */}
-      <View style={styles.content}>
-        <Text style={styles.title}>{destination.name}</Text>
-        <Text style={styles.location}>{destination.location}</Text>
-        <Text style={styles.description}>{destination.description}</Text>
-
-        {/* Tags */}
-        <View style={styles.tags}>
-          {destination.tags?.map((tag, idx) => (
-            <View key={idx} style={styles.tag}>
-              <Text style={styles.tagText}>{tag}</Text>
+            <View style={styles.topBar}>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                onPress={() => router.back()}
+              >
+                <Ionicons name="arrow-back" size={22} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn}>
+                <Ionicons name="share-social" size={22} color="#fff" />
+              </TouchableOpacity>
             </View>
-          ))}
+          </ImageBackground>
         </View>
 
-        {/* Price + Book button */}
-        <Text style={styles.price}>
-          ₱{Number(destination.price).toLocaleString()} per person
-        </Text>
-        <TouchableOpacity
-          style={styles.bookBtn}
-          onPress={() => router.push(`/destination/${id}/book`)}
-        >
-          <Text style={styles.bookText}>Book This Destination</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 🔹 Yelp Reviews */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Traveler Reviews</Text>
-        {!yelp ? (
-          <Text style={styles.placeholder}>Loading reviews...</Text>
-        ) : (
-          <View>
-            <Text style={styles.description}>{yelp.summary}</Text>
-            <Text style={styles.smallText}>⭐ {yelp.rating} on Yelp</Text>
-          </View>
-        )}
-      </View>
-
-      {/* 🔹 Recommended Places */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Nearby Spots</Text>
-        {places.length === 0 ? (
-          <Text style={styles.placeholder}>Loading places...</Text>
-        ) : (
-          places.map((p, i) => (
-            <View key={i} style={{ marginBottom: 12 }}>
-              <Text style={styles.subTitle}>{p.title}</Text>
-              <Text style={styles.smallText}>{p.description}</Text>
+        {/* Info Card */}
+        <View style={styles.infoCardWrapper}>
+          <BlurView intensity={70} tint="light" style={styles.infoCard}>
+            {/* Title + Price */}
+            <View style={styles.headerRow}>
+              <View>
+                <Text style={styles.title}>{destination.name}</Text>
+                <Text style={styles.location}>{destination.location}</Text>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={styles.price}>
+                  ₱{Number(destination.price).toLocaleString()}
+                </Text>
+                <Text style={styles.perPerson}>Per person</Text>
+              </View>
             </View>
-          ))
-        )}
-      </View>
 
-      {/* 🔹 Weather */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Weather Insights</Text>
-        {!weather ? (
-          <Text style={styles.placeholder}>Loading weather...</Text>
-        ) : (
-          <>
-            <Text style={styles.subTitle}>Best Time to Visit</Text>
-            {weather.bestTime?.map((t, i) => (
-              <Text key={i} style={styles.smallText}>
-                {t.emoji} {t.label} — {t.reason}
-              </Text>
-            ))}
-            <Text style={[styles.subTitle, { marginTop: 10 }]}>
-              Weather Info
-            </Text>
-            {weather.weatherInfo?.map((w, i) => (
-              <Text key={i} style={styles.smallText}>
-                {w.label}: {w.months} ({w.temperature})
-              </Text>
-            ))}
-          </>
-        )}
+            <Text style={styles.description}>{destination.description}</Text>
+
+            {/* Modular components */}
+            <TravelerReviews
+              name={destination.name}
+              location={destination.location}
+            />
+
+            <Text style={styles.sectionTitle}>Nearby Spots</Text>
+            <NearbySpots lat={destination.latitude} lon={destination.longitude} />
+
+            <WeatherInsights
+              name={destination.name}
+              location={destination.location}
+            />
+
+            {/* Map */}
+            <View style={styles.mapBox}>
+              <MapView
+                style={{ flex: 1 }}
+                initialRegion={{
+                  latitude: destination.latitude,
+                  longitude: destination.longitude,
+                  latitudeDelta: 0.05,
+                  longitudeDelta: 0.05,
+                }}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: destination.latitude,
+                    longitude: destination.longitude,
+                  }}
+                  title={destination.name}
+                />
+              </MapView>
+            </View>
+          </BlurView>
+        </View>
+      </Animated.ScrollView>
+
+      {/* Sticky Book Now */}
+      <View style={styles.stickyBtnWrapper}>
+        <Pressable
+          onPress={() => router.push(`/destination/${id}/book`)}
+          style={({ pressed }) => [
+            styles.bookBtn,
+            { transform: [{ scale: pressed ? 0.96 : 1 }] },
+          ]}
+        >
+          <LinearGradient
+            colors={["#2563EB", "#1D4ED8"]}
+            style={styles.gradient}
+          >
+            <Text style={styles.bookText}>Book Now</Text>
+          </LinearGradient>
+        </Pressable>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  heroImage: { width: "100%", height: 250 },
-  backBtn: {
-    position: "absolute",
-    top: 40,
-    left: 16,
-    backgroundColor: "rgba(0,0,0,0.6)",
+  container: { flex: 1, backgroundColor: "#fff" },
+  heroImage: { width: "100%", height: height * 0.45 },
+  topBar: {
+    marginTop: 50,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+  },
+  iconBtn: {
+    backgroundColor: "rgba(0,0,0,0.5)",
     padding: 8,
     borderRadius: 20,
   },
-  content: { padding: 16 },
-  title: { fontSize: 24, fontWeight: "700", color: "#111" },
-  location: { fontSize: 14, color: "#6B7280", marginTop: 2 },
-  description: { fontSize: 16, color: "#374151", marginVertical: 12 },
-  tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
-  tag: {
-    backgroundColor: "#E0F2FE",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
+  infoCardWrapper: {
+    marginTop: -20,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    overflow: "hidden",
   },
-  tagText: { fontSize: 12, fontWeight: "500", color: "#0369A1" },
-  price: { fontSize: 18, fontWeight: "600", color: "#1E3A8A", marginTop: 8 },
+  infoCard: {
+    padding: 20,
+    backgroundColor: "rgba(255,255,255,0.9)",
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  title: { fontSize: 22, fontWeight: "700", color: "#111" },
+  location: { fontSize: 14, color: "#6b7280", marginTop: 2 },
+  description: { fontSize: 15, color: "#374151", marginVertical: 12 },
+  price: { fontSize: 20, fontWeight: "700", color: "#2563EB" },
+  perPerson: { fontSize: 13, color: "#6b7280" },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+    marginVertical: 10,
+  },
+  mapBox: {
+    marginTop: 20,
+    borderRadius: 16,
+    overflow: "hidden",
+    height: 160,
+  },
+  stickyBtnWrapper: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+  },
   bookBtn: {
-    marginTop: 10,
-    backgroundColor: "#2563EB",
-    paddingVertical: 12,
     borderRadius: 999,
-    alignItems: "center",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  bookText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  section: { marginTop: 20, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 18, fontWeight: "700", marginBottom: 10 },
-  subTitle: { fontSize: 16, fontWeight: "600", color: "#111" },
-  smallText: { fontSize: 14, color: "#444" },
-  placeholder: { fontSize: 14, color: "#9CA3AF", fontStyle: "italic" },
+  gradient: {
+    paddingVertical: 16,
+    alignItems: "center",
+    borderRadius: 999,
+  },
+  bookText: { color: "#fff", fontWeight: "700", fontSize: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
   error: { fontSize: 16, color: "red" },
 });
