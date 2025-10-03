@@ -84,7 +84,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Exclusive Promotions</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/promos")}>
+              <TouchableOpacity onPress={() => router.push("/(promos)")}>
                 <Text style={styles.link}>See All</Text>
               </TouchableOpacity>
             </View>
