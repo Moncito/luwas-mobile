@@ -32,7 +32,7 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.replace("/auth/login");
+      router.replace("../auth/login");
     } catch (error) {
       console.error("Sign out error:", error);
     }

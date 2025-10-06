@@ -1,12 +1,12 @@
 import { BlurView } from "expo-blur";
 import React, { useEffect, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Image,
-    StyleSheet,
-    Text,
-    View,
+  Animated,
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 const { width, height } = Dimensions.get("window");
@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
 
     // ✨ Modern Glassmorphism
     backgroundColor: "rgba(255,255,255,0.0003)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.10",
+    borderWidth: 0,
+    borderColor: "rgba(255,255,255,0.1",
     shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 10,
