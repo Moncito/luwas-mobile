@@ -97,40 +97,52 @@ export default function ItineraryBookingForm() {
     }));
   };
 
-  const handleSubmit = async () => {
-    if (!itinerary) return;
-    if (!formData.departureDate) {
-      Alert.alert("Error", "Please select a departure date.");
-      return;
-    }
+const handleSubmit = async () => {
+  if (!itinerary) return;
 
-    setLoading(true);
-    try {
-      const totalPrice = formData.travelers * (itinerary.price || 0);
+  if (!formData.departureDate) {
+    Alert.alert("Error", "Please select a departure date.");
+    return;
+  }
 
-      const docRef = await addDoc(collection(db, "itineraryBookings"), {
-        ...formData,
-        userId: user?.uid,
-        itineraryId: id,
-        itineraryTitle: itinerary.title,
-        totalPrice,
-        status: "pending_payment",
-        createdAt: serverTimestamp(),
-      });
+  setLoading(true);
+  try {
+    // 🧮 Compute pricing
+    const price = itinerary.price || 0;
+    const totalPrice = formData.travelers * price;
 
-      Alert.alert("Success", "Booking created! Redirecting to payment...");
-      router.push(
-        `/(itineraries)/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
-          itinerary.title
-        )}&type=itinerary`
-      );
-    } catch (err) {
-      console.error("Booking error:", err);
-      Alert.alert("Error", "Something went wrong while booking.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ Unified booking structure (same as web)
+    const bookingData = {
+      ...formData,
+      userId: user?.uid,
+      itineraryId: id,
+      itineraryTitle: itinerary.title,
+      price, // 💰 per traveler
+      totalPrice, // 💰 total
+      status: "pending_payment",
+      createdAt: serverTimestamp(),
+    };
+
+    // ✅ Save to Firestore
+    const docRef = await addDoc(collection(db, "itineraryBookings"), bookingData);
+
+    Alert.alert(
+      "Success",
+      `Booking created! Total: ₱${totalPrice.toLocaleString()}\nRedirecting to payment...`
+    );
+
+    router.push(
+      `/(itineraries)/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
+        itinerary.title
+      )}&type=itinerary&amount=${totalPrice}`
+    );
+  } catch (err) {
+    console.error("Booking error:", err);
+    Alert.alert("Error", "Something went wrong while booking.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!itinerary) {
     return (

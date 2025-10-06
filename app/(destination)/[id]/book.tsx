@@ -99,35 +99,43 @@ export default function BookingForm() {
     }));
   };
 
-  const handleSubmit = async () => {
-    if (!destination) return;
-    setLoading(true);
+const handleSubmit = async () => {
+  if (!destination) return;
+  setLoading(true);
 
-    try {
-      const totalPrice = formData.travelers * (destination.price || 0);
+  try {
+    // 🧮 Compute pricing
+    const price = destination.price || 0;
+    const totalPrice = formData.travelers * price;
 
-      // ✅ Direct Firestore write
-      const docRef = await addDoc(collection(db, "bookings"), {
-        ...formData,
-        userId: user?.uid,
-        destinationId: id,
-        destination: destination.name,
-        totalPrice,
-        status: "pending_payment",
-        createdAt: serverTimestamp(),
-      });
+    // ✅ Unified booking data (same as web)
+    const bookingData = {
+      ...formData,
+      userId: user?.uid,
+      destinationId: id,
+      destination: destination.name,
+      price, // 💰 per traveler
+      totalPrice, // 💰 total
+      status: "pending_payment",
+      createdAt: serverTimestamp(),
+    };
 
-      Alert.alert("Success", "Booking created! Redirecting to payment...");
-      router.push(`/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
-  destination.name
-)}&type=destination`);
-    } catch (err) {
-      console.error("Booking error:", err);
-      Alert.alert("Error", "Something went wrong while booking.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ Write to Firestore (same structure as web)
+    const docRef = await addDoc(collection(db, "bookings"), bookingData);
+
+    Alert.alert("Success", "Booking created! Redirecting to payment...");
+    router.push(
+      `/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
+        destination.name
+      )}&type=destination&amount=${totalPrice}`
+    );
+  } catch (err) {
+    console.error("Booking error:", err);
+    Alert.alert("Error", "Something went wrong while booking.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!destination) {
     return (

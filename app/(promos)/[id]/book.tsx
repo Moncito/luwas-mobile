@@ -106,36 +106,55 @@ export default function PromoBookingForm() {
     }));
   };
 
-  const handleSubmit = async () => {
-    if (!promo) return;
-    setLoading(true);
+const handleSubmit = async () => {
+  if (!promo) return;
 
-    try {
-      const totalPrice = formData.travelers * (promo.finalPrice || 0);
+  if (!formData.departureDate) {
+    Alert.alert("Error", "Please select a departure date.");
+    return;
+  }
 
-      const docRef = await addDoc(collection(db, "promoBookings"), {
-        ...formData,
-        userId: user?.uid,
-        promoId: id,
-        promoTitle: promo.title,
-        totalPrice,
-        status: "pending_payment",
-        createdAt: serverTimestamp(),
-      });
+  setLoading(true);
 
-      Alert.alert("Success", "Booking created! Redirecting to payment...");
-      router.push(
-        `/(promos)/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
-          promo.title
-        )}&type=promo`
-      );
-    } catch (err) {
-      console.error("Booking error:", err);
-      Alert.alert("Error", "Something went wrong while booking.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    // 💰 Compute prices
+    const price = promo.finalPrice || 0;
+    const totalPrice = formData.travelers * price;
+
+    // ✅ Unified data (same as web)
+    const bookingData = {
+      ...formData,
+      userId: user?.uid,
+      promoId: id,
+      promoTitle: promo.title,
+      price, // 🔥 include price per traveler
+      totalPrice, // 🔥 include total amount
+      status: "pending_payment",
+      createdAt: serverTimestamp(),
+    };
+
+    // ✅ Save to Firestore
+    const docRef = await addDoc(collection(db, "promoBookings"), bookingData);
+
+    Alert.alert(
+      "Success",
+      `Booking created! Total: ₱${totalPrice.toLocaleString()}\nRedirecting to payment...`
+    );
+
+    // ✅ Redirect to payment page
+    router.push(
+      `/(promos)/${id}/pay?bookingId=${docRef.id}&title=${encodeURIComponent(
+        promo.title
+      )}&type=promo&amount=${totalPrice}`
+    );
+  } catch (err) {
+    console.error("Booking error:", err);
+    Alert.alert("Error", "Something went wrong while booking.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   if (!promo) {
     return (
