@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Facebook from "expo-auth-session/providers/facebook";
 import * as Google from "expo-auth-session/providers/google";
-import { BlurView } from "expo-blur";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -12,18 +11,17 @@ import {
   signInWithCredential,
 } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  ImageBackground,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import AuthScaffold from "../../components/AuthScaffold";
 import { auth, db } from "../../src/lib/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -32,7 +30,7 @@ export default function Register() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
   const {
@@ -43,7 +41,6 @@ export default function Register() {
     FACEBOOK_APP_ID,
   } = Constants.expoConfig?.extra || {};
 
-  // 👉 Google Auth
   const [googleRequest, googleResponse, promptGoogle] = Google.useAuthRequest({
     clientId: GOOGLE_EXPO_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
@@ -51,27 +48,29 @@ export default function Register() {
     webClientId: GOOGLE_WEB_CLIENT_ID,
   });
 
-  // 👉 Facebook Auth
   const [fbRequest, fbResponse, promptFacebook] = Facebook.useAuthRequest({
     clientId: FACEBOOK_APP_ID,
   });
 
-  // ✅ Handle Social Login
+  const finishProfileDoc = async (uid: string, emailVal: string) => {
+    await setDoc(
+      doc(db, "users", uid),
+      {
+        uid,
+        email: emailVal,
+        role: "traveler",
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+  };
+
   const handleSocialLogin = useCallback(
     async (credential: any) => {
       try {
         setLoading(true);
         const cred = await signInWithCredential(auth, credential);
-        await setDoc(
-          doc(db, "users", cred.user.uid),
-          {
-            uid: cred.user.uid,
-            email: cred.user.email,
-            role: "traveler",
-            createdAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        await finishProfileDoc(cred.user.uid, cred.user.email ?? "");
         router.replace("/homesection");
       } catch (err: any) {
         Alert.alert("Social Login Failed", err.message);
@@ -82,7 +81,6 @@ export default function Register() {
     [router]
   );
 
-  // ✅ Effect for Socials
   useEffect(() => {
     if (googleResponse?.type === "success") {
       const { id_token } = googleResponse.params;
@@ -96,33 +94,19 @@ export default function Register() {
     }
   }, [googleResponse, fbResponse, handleSocialLogin]);
 
-  // ✅ Email/Password Register
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
-      Alert.alert("Validation Error", "Please fill in all fields.");
-      return;
-    }
-    if (password.length < 6) {
-      Alert.alert("Weak Password", "Password must be at least 6 characters.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      Alert.alert("Password Mismatch", "Passwords do not match.");
-      return;
-    }
+    if (!email || !password || !confirm)
+      return Alert.alert("Please fill in all fields.");
+    if (password.length < 6)
+      return Alert.alert("Password must be at least 6 characters.");
+    if (password !== confirm)
+      return Alert.alert("Passwords do not match.");
 
     try {
       setLoading(true);
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, "users", cred.user.uid), {
-        uid: cred.user.uid,
-        email,
-        role: "traveler",
-        createdAt: serverTimestamp(),
-      });
-      Alert.alert("Success", "Account created successfully!");
+      await finishProfileDoc(cred.user.uid, email);
       router.replace("/homesection");
-
     } catch (err: any) {
       Alert.alert("Registration Failed", err.message);
     } finally {
@@ -131,100 +115,147 @@ export default function Register() {
   };
 
   return (
-    <ImageBackground
-      source={{ uri: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e" }}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)" }} />
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <BlurView intensity={80} tint="light" style={styles.card}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up with email or continue with a provider</Text>
+    <AuthScaffold title="Sign up with">
+      <Text style={styles.subtitle}>
+        Use your email or continue with a provider below
+      </Text>
 
-          {/* Socials */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity
-              style={styles.socialBtn}
-              disabled={!googleRequest}
-              onPress={() => promptGoogle()}
-            >
-              <Ionicons name="logo-google" size={20} color="white" />
-              <Text style={styles.socialText}>Google</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.socialBtn}
-              disabled={!fbRequest}
-              onPress={() => promptFacebook()}
-            >
-              <Ionicons name="logo-facebook" size={20} color="white" />
-              <Text style={styles.socialText}>Facebook</Text>
-            </TouchableOpacity>
-          </View>
+      {/* 🔹 Social Buttons */}
+      <View style={styles.socialRow}>
+        <TouchableOpacity
+          style={[styles.socialBtn, { backgroundColor: "#fff" }]}
+          disabled={!googleRequest}
+          onPress={() => promptGoogle()}
+        >
+          <Ionicons name="logo-google" size={18} color="#000" />
+          <Text style={[styles.socialText, { color: "#000" }]}>Google</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.socialBtn, { backgroundColor: "#fff" }]}
+          disabled={!fbRequest}
+          onPress={() => promptFacebook()}
+        >
+          <Ionicons name="logo-facebook" size={18} color="#000" />
+          <Text style={[styles.socialText, { color: "#000" }]}>Facebook</Text>
+        </TouchableOpacity>
+      </View>
 
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.line} />
-            <Text style={{ color: "#ddd" }}>Or</Text>
-            <View style={styles.line} />
-          </View>
+      {/* Divider */}
+      <View style={styles.divider}>
+        <View style={styles.line} />
+        <Text style={{ color: "#ccc" }}>Or</Text>
+        <View style={styles.line} />
+      </View>
 
-          {/* Inputs */}
-          <TextInput
-            placeholder="Your Email Address"
-            placeholderTextColor="#ddd"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-          <TextInput
-            placeholder="Create a Password"
-            placeholderTextColor="#ddd"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.input}
-          />
-          <TextInput
-            placeholder="Confirm Password"
-            placeholderTextColor="#ddd"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            style={styles.input}
-          />
+      {/* Email / Password Fields */}
+      <TextInput
+        placeholder="Email Address"
+        placeholderTextColor="#d1d5db"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        placeholderTextColor="#d1d5db"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Confirm Password"
+        placeholderTextColor="#d1d5db"
+        value={confirm}
+        onChangeText={setConfirm}
+        secureTextEntry
+        style={styles.input}
+      />
 
-          {/* Register Button */}
-          <TouchableOpacity onPress={handleRegister} disabled={loading} style={styles.registerBtn}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.registerText}>Register</Text>}
-          </TouchableOpacity>
+      {/* Register Button */}
+      <TouchableOpacity
+        style={styles.primaryBtn}
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.primaryText}>Sign Up</Text>
+        )}
+      </TouchableOpacity>
 
-          {/* Login Link */}
-          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-            <Text style={styles.footerText}>
-              Already have an account? <Text style={styles.footerLink}>Login</Text>
-            </Text>
-          </TouchableOpacity>
-        </BlurView>
-      </SafeAreaView>
-    </ImageBackground>
+      {/* Footer */}
+      <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+        <Text style={styles.footer}>
+          Already have an account?{" "}
+          <Text style={styles.footerLink}>Login</Text>
+        </Text>
+      </TouchableOpacity>
+    </AuthScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 20, width: "100%", maxWidth: 400, borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", overflow: "hidden" },
-  title: { fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 5, color: "white" },
-  subtitle: { textAlign: "center", color: "#ddd", marginBottom: 15 },
-  socialRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15 },
-  socialBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 8, paddingVertical: 12, marginHorizontal: 5 },
-  socialText: { marginLeft: 8, fontWeight: "500", color: "white" },
-  divider: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-  line: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.3)" },
-  input: { borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", borderRadius: 8, padding: 12, marginBottom: 10, color: "white" },
-  registerBtn: { backgroundColor: "rgba(22, 163, 74, 0.8)", borderRadius: 8, paddingVertical: 14, marginBottom: 12 },
-  registerText: { color: "white", textAlign: "center", fontSize: 16, fontWeight: "600" },
-  footerText: { textAlign: "center", color: "white" },
-  footerLink: { color: "#93c5fd", fontWeight: "600" },
+  subtitle: {
+    color: "#e5e7eb",
+    textAlign: "center",
+    marginBottom: 16,
+    fontSize: 14,
+  },
+  socialRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 18,
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  socialText: { marginLeft: 8, fontWeight: "600", fontSize: 15 },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginVertical: 10,
+  },
+  line: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.25)" },
+  input: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
+    borderRadius: 12,
+    padding: 14,
+    color: "#fff",
+    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  primaryBtn: {
+    backgroundColor: "#16A34A",
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginBottom: 12,
+    shadowColor: "#16A34A",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  primaryText: {
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  footer: {
+    textAlign: "center",
+    color: "#fff",
+    marginTop: 4,
+  },
+  footerLink: { color: "#93c5fd", fontWeight: "700" },
 });

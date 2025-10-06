@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Facebook from "expo-auth-session/providers/facebook";
 import * as Google from "expo-auth-session/providers/google";
-import { BlurView } from "expo-blur";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -12,18 +11,17 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  ImageBackground,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import AuthScaffold from "../../components/AuthScaffold";
 import { auth, db } from "../../src/lib/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -42,7 +40,6 @@ export default function Login() {
     FACEBOOK_APP_ID,
   } = Constants.expoConfig?.extra || {};
 
-  // 👉 Google Auth Request
   const [googleRequest, googleResponse, promptGoogle] = Google.useAuthRequest({
     clientId: GOOGLE_EXPO_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
@@ -50,24 +47,18 @@ export default function Login() {
     webClientId: GOOGLE_WEB_CLIENT_ID,
   });
 
-  // 👉 Facebook Auth Request
   const [fbRequest, fbResponse, promptFacebook] = Facebook.useAuthRequest({
     clientId: FACEBOOK_APP_ID,
   });
 
-  // ✅ Handle Social Login (Google / FB)
   const handleSocialLogin = useCallback(
     async (credential: any) => {
       try {
         setLoading(true);
         const cred = await signInWithCredential(auth, credential);
-
         const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-        if (!userDoc.exists()) {
-          Alert.alert("Account Error", "No LUWAS profile found. Please register first.");
-          return;
-        }
-
+        if (!userDoc.exists())
+          return Alert.alert("No LUWAS profile found. Please register first.");
         router.replace("/homesection");
       } catch (err: any) {
         Alert.alert("Social Login Failed", err.message);
@@ -78,7 +69,6 @@ export default function Login() {
     [router]
   );
 
-  // ✅ Effect for Social Logins
   useEffect(() => {
     if (googleResponse?.type === "success") {
       const { id_token } = googleResponse.params;
@@ -92,24 +82,15 @@ export default function Login() {
     }
   }, [googleResponse, fbResponse, handleSocialLogin]);
 
-  // ✅ Email/Password Login
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Validation Error", "Please fill in all fields.");
-      return;
-    }
+    if (!email || !password)
+      return Alert.alert("Please enter email and password.");
     try {
       setLoading(true);
       const cred = await signInWithEmailAndPassword(auth, email, password);
-
       const userDoc = await getDoc(doc(db, "users", cred.user.uid));
-      if (!userDoc.exists()) {
-        Alert.alert("Account Error", "No LUWAS profile found.");
-        return;
-      }
-
+      if (!userDoc.exists()) return Alert.alert("No LUWAS profile found.");
       router.replace("/homesection");
-
     } catch (err: any) {
       Alert.alert("Login Failed", err.message);
     } finally {
@@ -118,98 +99,149 @@ export default function Login() {
   };
 
   return (
-    <ImageBackground
-      source={{ uri: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e" }}
-      style={{ flex: 1 }}
-      resizeMode="cover"
-    >
-      <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.5)" }} />
-      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <BlurView intensity={80} tint="light" style={styles.card}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Login to continue your journey</Text>
+    <AuthScaffold title="Login with">
+      <Text style={styles.subtitle}>
+        Use your email or continue with a provider below
+      </Text>
 
-          {/* Social Buttons */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity
-              style={styles.socialBtn}
-              disabled={!googleRequest}
-              onPress={() => promptGoogle()}
-            >
-              <Ionicons name="logo-google" size={20} color="white" />
-              <Text style={styles.socialText}>Google</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.socialBtn}
-              disabled={!fbRequest}
-              onPress={() => promptFacebook()}
-            >
-              <Ionicons name="logo-facebook" size={20} color="white" />
-              <Text style={styles.socialText}>Facebook</Text>
-            </TouchableOpacity>
-          </View>
+      {/* 🔹 Social Buttons */}
+      <View style={styles.socialRow}>
+        <TouchableOpacity
+          style={[styles.socialBtn, { backgroundColor: "#fff" }]}
+          disabled={!googleRequest}
+          onPress={() => promptGoogle()}
+        >
+          <Ionicons name="logo-google" size={18} color="#000" />
+          <Text style={[styles.socialText, { color: "#000" }]}>Google</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.socialBtn, { backgroundColor: "#fff" }]}
+          disabled={!fbRequest}
+          onPress={() => promptFacebook()}
+        >
+          <Ionicons name="logo-facebook" size={18} color="#000" />
+          <Text style={[styles.socialText, { color: "#000" }]}>Facebook</Text>
+        </TouchableOpacity>
+      </View>
 
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.line} />
-            <Text style={{ color: "#ddd" }}>Or</Text>
-            <View style={styles.line} />
-          </View>
+      {/* Divider */}
+      <View style={styles.divider}>
+        <View style={styles.line} />
+        <Text style={{ color: "#ccc" }}>Or</Text>
+        <View style={styles.line} />
+      </View>
 
-          {/* Inputs */}
-          <TextInput
-            placeholder="Your Email Address"
-            placeholderTextColor="#ddd"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-          <TextInput
-            placeholder="Enter your Password"
-            placeholderTextColor="#ddd"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={styles.input}
-          />
+      {/* Email / Password */}
+      <TextInput
+        placeholder="Email Address"
+        placeholderTextColor="#d1d5db"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        placeholderTextColor="#d1d5db"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
 
-          {/* Forgot Password */}
-          <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
-            <Text style={styles.linkRight}>Forgot Password?</Text>
-          </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+        <Text style={styles.linkRight}>Forgot Password?</Text>
+      </TouchableOpacity>
 
-          {/* Login Button */}
-          <TouchableOpacity onPress={handleLogin} disabled={loading} style={styles.loginBtn}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginText}>Login</Text>}
-          </TouchableOpacity>
+      {/* Login Button */}
+      <TouchableOpacity
+        style={styles.primaryBtn}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.primaryText}>Login</Text>
+        )}
+      </TouchableOpacity>
 
-          {/* Sign Up Link */}
-          <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
-            <Text style={styles.footerText}>
-              No account yet? <Text style={styles.footerLink}>Sign up</Text>
-            </Text>
-          </TouchableOpacity>
-        </BlurView>
-      </SafeAreaView>
-    </ImageBackground>
+      {/* Footer */}
+      <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
+        <Text style={styles.footer}>
+          No account yet?{" "}
+          <Text style={styles.footerLink}>Sign up</Text>
+        </Text>
+      </TouchableOpacity>
+    </AuthScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 20, width: "100%", maxWidth: 400, borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", overflow: "hidden" },
-  title: { fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 5, color: "white" },
-  subtitle: { textAlign: "center", color: "#ddd", marginBottom: 15 },
-  socialRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 15 },
-  socialBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 8, paddingVertical: 12, marginHorizontal: 5 },
-  socialText: { marginLeft: 8, fontWeight: "500", color: "white" },
-  divider: { flexDirection: "row", alignItems: "center", marginVertical: 10 },
-  line: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.3)" },
-  input: { borderWidth: 1, borderColor: "rgba(255,255,255,0.3)", borderRadius: 8, padding: 12, marginBottom: 10, color: "white" },
-  linkRight: { textAlign: "right", color: "#93c5fd", marginBottom: 15 },
-  loginBtn: { backgroundColor: "rgba(37, 99, 235, 0.8)", borderRadius: 8, paddingVertical: 14, marginBottom: 12 },
-  loginText: { color: "white", textAlign: "center", fontSize: 16, fontWeight: "600" },
-  footerText: { textAlign: "center", color: "white" },
-  footerLink: { color: "#93c5fd", fontWeight: "600" },
+  subtitle: {
+    color: "#e5e7eb",
+    textAlign: "center",
+    marginBottom: 16,
+    fontSize: 14,
+  },
+  socialRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 18,
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  socialText: { marginLeft: 8, fontWeight: "600", fontSize: 15 },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginVertical: 10,
+  },
+  line: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.25)" },
+  input: {
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
+    borderRadius: 12,
+    padding: 14,
+    color: "#fff",
+    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  linkRight: {
+    textAlign: "right",
+    color: "#93c5fd",
+    marginBottom: 14,
+    fontSize: 13,
+  },
+  primaryBtn: {
+    backgroundColor: "#2563EB",
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginBottom: 12,
+    shadowColor: "#2563EB",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  primaryText: {
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  footer: {
+    textAlign: "center",
+    color: "#fff",
+    marginTop: 4,
+  },
+  footerLink: { color: "#93c5fd", fontWeight: "700" },
 });
