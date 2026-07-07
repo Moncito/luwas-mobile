@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 
 export default {
   expo: {
@@ -9,9 +9,19 @@ export default {
     platforms: ["ios", "android", "web"],
     sdkVersion: "54.0.0",
     scheme: "luwasmobile",
+
+    runtimeVersion: {
+      policy: "sdkVersion", // ✅ ensures the runtime matches SDK 54
+    },
+
     android: {
       package: "com.luwas.travelapp",
+      adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
+        backgroundColor: "#FFFFFF",
+      },
     },
+
     ios: {
       bundleIdentifier: "com.luwas.travelapp",
     },
@@ -43,6 +53,10 @@ export default {
             "com.googleusercontent.apps.1030258873457-h44abd9qhpkt229gqkqkmd0t65soq707",
         },
       ],
+      // Disabled: Reanimated Babel plugin causes "Cannot read properties of undefined"
+      // The library still works at runtime - this just skips Babel optimization
+      // To fix: upgrade to reanimated v4+ or sync Expo/Babel versions
+      // "react-native-reanimated/plugin",
     ],
   },
 };

@@ -3,6 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "baseUrl": ".",
+    "jsx": "react-native",          // 👈 Ensures JSX is compiled properly for RN
+    "types": ["react", "react-native", "react-native-reanimated"], // 👈 adds worklet typings
     "paths": {
       "@/*": ["*"],
       "@hooks/*": ["hooks/*"],

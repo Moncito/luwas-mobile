@@ -1,3 +1,4 @@
+import DropdownSelect from "@/components/DropdownSelect"; // ✅ custom dropdown component
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "@lib/firebase";
 import * as ImagePicker from "expo-image-picker";
@@ -6,15 +7,15 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function EditProfile() {
@@ -199,11 +200,13 @@ export default function EditProfile() {
             value={form.age}
             onChangeText={(v) => setForm((p) => ({ ...p, age: v }))}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Gender"
+
+          {/* ✅ Gender Dropdown */}
+          <DropdownSelect
+            label="Gender"
             value={form.gender}
-            onChangeText={(v) => setForm((p) => ({ ...p, gender: v }))}
+            options={["Male", "Female", "Prefer not to say"]}
+            onSelect={(v) => setForm((p) => ({ ...p, gender: v }))}
           />
         </View>
 
@@ -222,11 +225,13 @@ export default function EditProfile() {
             value={form.occupation}
             onChangeText={(v) => setForm((p) => ({ ...p, occupation: v }))}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Income Level (Low, Medium, High)"
+
+          {/* ✅ Income Level Dropdown */}
+          <DropdownSelect
+            label="Income Level"
             value={form.incomeLevel}
-            onChangeText={(v) => setForm((p) => ({ ...p, incomeLevel: v }))}
+            options={["Low", "Medium", "High"]}
+            onSelect={(v) => setForm((p) => ({ ...p, incomeLevel: v }))}
           />
         </View>
 
@@ -246,9 +251,7 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
+  container: { padding: 20 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -260,15 +263,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3f4f6",
     borderRadius: 20,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  avatarWrapper: {
-    alignSelf: "center",
-    marginBottom: 16,
-  },
+  title: { fontSize: 18, fontWeight: "700", color: "#111" },
+  avatarWrapper: { alignSelf: "center", marginBottom: 16 },
   avatar: {
     width: 110,
     height: 110,
@@ -294,15 +290,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 4,
   },
-  progressFill: {
-    height: 8,
-    backgroundColor: "#2563EB",
-  },
-  progressText: {
-    fontSize: 13,
-    color: "#555",
-    marginTop: 4,
-  },
+  progressFill: { height: 8, backgroundColor: "#2563EB" },
+  progressText: { fontSize: 13, color: "#555", marginTop: 4 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
@@ -314,6 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     borderRadius: 16,
     padding: 14,
+    elevation: 2,
   },
   input: {
     backgroundColor: "#fff",
