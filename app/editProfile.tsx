@@ -1,3 +1,4 @@
+import DropdownSelect from "@/components/DropdownSelect"; // ✅ custom dropdown component
 import { Ionicons } from "@expo/vector-icons";
 import { auth, db } from "@lib/firebase";
 import * as ImagePicker from "expo-image-picker";
@@ -6,21 +7,21 @@ import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { getDownloadURL, getStorage, ref, uploadBytes } from "firebase/storage";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-
+ 
 export default function EditProfile() {
   const router = useRouter();
   const user = auth.currentUser;
-
+ 
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -32,14 +33,14 @@ export default function EditProfile() {
     incomeLevel: "",
     avatarUrl: "",
   });
-
+ 
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-
+ 
   // ✅ Fetch existing data
   useEffect(() => {
     if (!user) return;
-
+ 
     const userRef = doc(db, "users", user.uid);
     const unsub = onSnapshot(userRef, (snap) => {
       if (snap.exists()) {
@@ -60,10 +61,10 @@ export default function EditProfile() {
       }
       setLoading(false);
     });
-
+ 
     return () => unsub();
   }, [user]);
-
+ 
   // ✅ Image picker + upload
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -72,23 +73,23 @@ export default function EditProfile() {
       aspect: [1, 1],
       quality: 0.8,
     });
-
+ 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
       await uploadImage(uri);
     }
   };
-
+ 
   const uploadImage = async (uri: string) => {
     try {
       setUploading(true);
       const response = await fetch(uri);
       const blob = await response.blob();
-
+ 
       const storage = getStorage();
       const storageRef = ref(storage, `avatars/${user?.uid}.jpg`);
       await uploadBytes(storageRef, blob);
-
+ 
       const downloadURL = await getDownloadURL(storageRef);
       setForm((prev) => ({ ...prev, avatarUrl: downloadURL }));
     } catch (err) {
@@ -97,7 +98,7 @@ export default function EditProfile() {
       setUploading(false);
     }
   };
-
+ 
   // ✅ Save profile
   const handleSave = async () => {
     if (!user) return;
@@ -120,14 +121,14 @@ export default function EditProfile() {
       setUploading(false);
     }
   };
-
+ 
   // ✅ Profile completion progress
   const completion = useMemo(() => {
     const fields = Object.entries(form).filter(([key]) => key !== "email" && key !== "avatarUrl");
     const filled = fields.filter(([, v]) => v && v.trim() !== "").length;
     return Math.round((filled / fields.length) * 100);
   }, [form]);
-
+ 
   if (loading) {
     return (
       <View style={styles.center}>
@@ -135,7 +136,7 @@ export default function EditProfile() {
       </View>
     );
   }
-
+ 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -147,7 +148,7 @@ export default function EditProfile() {
           <Text style={styles.title}>Edit Profile</Text>
           <View style={{ width: 22 }} />
         </View>
-
+ 
         {/* Avatar */}
         <TouchableOpacity onPress={pickImage} style={styles.avatarWrapper}>
           <Image
@@ -162,7 +163,7 @@ export default function EditProfile() {
             <Ionicons name="camera" size={18} color="#fff" />
           </View>
         </TouchableOpacity>
-
+ 
         {/* Progress */}
         <View style={styles.progressContainer}>
           <Text style={styles.label}>Profile Completion</Text>
@@ -171,7 +172,7 @@ export default function EditProfile() {
           </View>
           <Text style={styles.progressText}>{completion}% Complete</Text>
         </View>
-
+ 
         {/* Personal Information */}
         <Text style={styles.sectionTitle}>Personal Information</Text>
         <View style={styles.section}>
@@ -199,14 +200,16 @@ export default function EditProfile() {
             value={form.age}
             onChangeText={(v) => setForm((p) => ({ ...p, age: v }))}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Gender"
+ 
+          {/* ✅ Gender Dropdown */}
+          <DropdownSelect
+            label="Gender"
             value={form.gender}
-            onChangeText={(v) => setForm((p) => ({ ...p, gender: v }))}
+            options={["Male", "Female", "Prefer not to say"]}
+            onSelect={(v) => setForm((p) => ({ ...p, gender: v }))}
           />
         </View>
-
+ 
         {/* Lifestyle Information */}
         <Text style={styles.sectionTitle}>Lifestyle Information</Text>
         <View style={styles.section}>
@@ -222,14 +225,16 @@ export default function EditProfile() {
             value={form.occupation}
             onChangeText={(v) => setForm((p) => ({ ...p, occupation: v }))}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Income Level (Low, Medium, High)"
+ 
+          {/* ✅ Income Level Dropdown */}
+          <DropdownSelect
+            label="Income Level"
             value={form.incomeLevel}
-            onChangeText={(v) => setForm((p) => ({ ...p, incomeLevel: v }))}
+            options={["Low", "Medium", "High"]}
+            onSelect={(v) => setForm((p) => ({ ...p, incomeLevel: v }))}
           />
         </View>
-
+ 
         {/* Save Button */}
         <TouchableOpacity
           style={[styles.saveBtn, uploading && { opacity: 0.6 }]}
@@ -244,11 +249,9 @@ export default function EditProfile() {
     </SafeAreaView>
   );
 }
-
+ 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
+  container: { padding: 20 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -260,15 +263,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3f4f6",
     borderRadius: 20,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111",
-  },
-  avatarWrapper: {
-    alignSelf: "center",
-    marginBottom: 16,
-  },
+  title: { fontSize: 18, fontWeight: "700", color: "#111" },
+  avatarWrapper: { alignSelf: "center", marginBottom: 16 },
   avatar: {
     width: 110,
     height: 110,
@@ -294,15 +290,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 4,
   },
-  progressFill: {
-    height: 8,
-    backgroundColor: "#2563EB",
-  },
-  progressText: {
-    fontSize: 13,
-    color: "#555",
-    marginTop: 4,
-  },
+  progressFill: { height: 8, backgroundColor: "#2563EB" },
+  progressText: { fontSize: 13, color: "#555", marginTop: 4 },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
@@ -314,6 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     borderRadius: 16,
     padding: 14,
+    elevation: 2,
   },
   input: {
     backgroundColor: "#fff",
@@ -338,3 +328,4 @@ const styles = StyleSheet.create({
   },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
+ 
