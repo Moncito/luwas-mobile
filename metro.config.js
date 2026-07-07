@@ -1,2 +1,18 @@
+<<<<<<< HEAD
 const { getDefaultConfig } = require("expo/metro-config");
 module.exports = getDefaultConfig(__dirname);
+=======
+// metro.config.js
+const { getDefaultConfig } = require("expo/metro-config");
+
+const config = getDefaultConfig(__dirname);
+
+config.resolver = {
+  ...config.resolver,
+  alias: {
+    "firebase/auth/react-native": "firebase/auth", // ✅ redirect to web version
+  },
+};
+
+module.exports = config;
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800

@@ -2,15 +2,25 @@ import { useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 import React, { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet, Text } from "react-native";
+<<<<<<< HEAD
 
 const { width, height } = Dimensions.get("window");
 
+=======
+ 
+const { width, height } = Dimensions.get("window");
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
 export default function IntroScreen() {
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const exitAnim = useRef(new Animated.Value(1)).current;
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   useEffect(() => {
     // Fade in and scale up
     Animated.parallel([
@@ -26,7 +36,11 @@ export default function IntroScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
     // Fade out and navigate
     const timer = setTimeout(() => {
       Animated.timing(exitAnim, {
@@ -37,10 +51,17 @@ export default function IntroScreen() {
         router.replace("/(auth)/login");
       });
     }, 3800);
+<<<<<<< HEAD
 
     return () => clearTimeout(timer);
   }, []);
 
+=======
+ 
+    return () => clearTimeout(timer);
+  }, []);
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   return (
     <Animated.View style={[styles.container, { opacity: exitAnim }]}>
       {/* ✈️ Plane animation (bigger and centered) */}
@@ -50,7 +71,11 @@ export default function IntroScreen() {
         loop={false}
         style={styles.lottie}
       />
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
       {/* 💫 Branding text */}
       <Animated.View
         style={[
@@ -64,7 +89,11 @@ export default function IntroScreen() {
     </Animated.View>
   );
 }
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -98,4 +127,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     letterSpacing: 0.3,
   },
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800

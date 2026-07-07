@@ -5,17 +5,25 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import IntroScreen from "../app/IntroScreen"; // 👈 adjust path if needed
 import { auth, db } from "../src/lib/firebase";
-
+ 
 export default function Index() {
   const [loading, setLoading] = useState(true);
   const [validUser, setValidUser] = useState(false);
   const [showIntro, setShowIntro] = useState(true); // 👈 control intro visibility
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   useEffect(() => {
     const timer = setTimeout(() => setShowIntro(false), 4000); // intro runs 4s
     return () => clearTimeout(timer);
   }, []);
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -28,10 +36,17 @@ export default function Index() {
     });
     return unsub;
   }, []);
+<<<<<<< HEAD
 
   // 🎬 1️⃣ Show Intro first
   if (showIntro) return <IntroScreen />;
 
+=======
+ 
+  // 🎬 1️⃣ Show Intro first
+  if (showIntro) return <IntroScreen />;
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   // 🔄 2️⃣ Show loading spinner while checking Firebase
   if (loading) {
     return (
@@ -43,7 +58,11 @@ export default function Index() {
       </View>
     );
   }
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   // 🧭 3️⃣ Redirect after intro & loading
   if (!validUser) return <Redirect href="/(auth)/login" />;
   return <Redirect href="/(tabs)/home" />;

@@ -2,6 +2,8 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "jsx": "react-native",          // 👈 Ensures JSX is compiled properly for RN
     "types": ["react", "react-native", "react-native-reanimated"], // 👈 adds worklet typings
@@ -10,7 +12,8 @@
       "@hooks/*": ["hooks/*"],
       "@lib/*": ["src/lib/*"],
       "@components/*": ["components/*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts", "**/*.tsx", "src/types/firebase-react-native.d.ts"]
 }

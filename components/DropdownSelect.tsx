@@ -8,14 +8,22 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
 type DropdownSelectProps = {
   label: string;
   value: string;
   options: string[];
   onSelect: (value: string) => void;
 };
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
 export default function DropdownSelect({
   label,
   value,
@@ -23,7 +31,11 @@ export default function DropdownSelect({
   onSelect,
 }: DropdownSelectProps) {
   const [visible, setVisible] = useState(false);
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
   return (
     <View style={{ marginBottom: 10 }}>
       <Text style={styles.label}>{label}</Text>
@@ -37,7 +49,11 @@ export default function DropdownSelect({
         </Text>
         <Ionicons name="chevron-down" size={18} color="#2563EB" />
       </TouchableOpacity>
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
       <Modal
         visible={visible}
         transparent
@@ -74,7 +90,11 @@ export default function DropdownSelect({
     </View>
   );
 }
+<<<<<<< HEAD
 
+=======
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
 const styles = StyleSheet.create({
   label: {
     fontSize: 14,
@@ -133,3 +153,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+<<<<<<< HEAD
+=======
+ 
+ 
+>>>>>>> 315c6d995f883847c6928cdeef741ded8b6a4800
